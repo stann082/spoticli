@@ -5,4 +5,9 @@ namespace cli.options;
 [Verb("playlists", HelpText = "Gets information and manage spotify playlists.")]
 public class PlaylistsOptions
 {
+    [Option('t', "tracks", HelpText = "List out tracks for a playlist.")]
+    public bool Tracks { get; set; }
+    
+    [Option('q', "query", HelpText = "Search for a specific playlist.")]
+    public string Query { get; set; }
 }

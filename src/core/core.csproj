@@ -7,11 +7,12 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <OutputPath>..\build\debug</OutputPath>
+    <OutputPath>..\..\build\debug</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <OutputPath>..\build\release</OutputPath>
+    <OutputPath>..\..\build\release</OutputPath>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

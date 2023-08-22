@@ -33,12 +33,14 @@ public class App
     public int RunApp(IEnumerable<string> args)
     {
         return Parser.Default.ParseArguments<ConfigOptions,
+                FavoritesOptions,
                 LoginOptions,
                 LogoutOptions,
                 PlaylistsOptions,
                 TracksOptions>(args)
             .MapResult(
                 (ConfigOptions opts) => ConfigCommand.Execute(opts, _config),
+                (FavoritesOptions opts) => FavoritesCommand.Execute(opts, _spotifyService),
                 (LoginOptions opts) => LoginCommand.Execute(opts, _config, _loginService),
                 (LogoutOptions _) => LogoutCommand.Execute(_config),
                 (PlaylistsOptions opts) => PlaylistsCommand.Execute(opts, _spotifyService),
