@@ -14,26 +14,32 @@ public static class FavoritesCommand
     public static int Execute(FavoritesOptions options, ISpotifyService spotifyService)
     {
         spotifyService.EnsureUserLoggedIn(out var spotify);
-        return options.RemoveFromPlaylists ? RemoveFavoriteTracksFromPlaylists(spotify) : 0;
+        var me = spotify.UserProfile.Current().GetAwaiter().GetResult();
+        var tracksPage = spotify.Library.GetTracks().GetAwaiter().GetResult();
+        var savedTracks = spotify.PaginateAll(tracksPage).GetAwaiter().GetResult().ToArray();
+        if (!savedTracks.Any())
+        {
+            Console.WriteLine("No saved tracks found");
+            return 0;
+        }
+
+        foreach (SavedTrack savedTrack in savedTracks)
+        {
+            Console.WriteLine(GetTracksInfo(new[] { savedTrack.Track }));
+        }
+        
+        return options.RemoveFromPlaylists ? RemoveFavoriteTracksFromPlaylists(spotify, savedTracks, me.Id) : 0;
     }
 
     #endregion
     
     #region Helper Methods
 
-    private static int RemoveFavoriteTracksFromPlaylists(ISpotifyClient spotify)
+    private static int RemoveFavoriteTracksFromPlaylists(ISpotifyClient spotify, SavedTrack[] savedTracks, string myId)
     {
-        var me = spotify.UserProfile.Current().GetAwaiter().GetResult();
-        var tracksPage = spotify.Library.GetTracks().GetAwaiter().GetResult();
-        var savedTracks = spotify.PaginateAll(tracksPage).GetAwaiter().GetResult().ToArray();
-        if (!savedTracks.Any())
-        {
-            return 1;
-        }
-
         var playlistsPage = spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 }).GetAwaiter().GetResult();
         var playlists = spotify.PaginateAll(playlistsPage).GetAwaiter().GetResult().ToArray();
-        var myPlaylists = playlists.Where(p => p.Owner.Id == me.Id).ToArray();
+        var myPlaylists = playlists.Where(p => p.Owner.Id == myId).ToArray();
         foreach (var playlist in myPlaylists)
         {
             var page = spotify.Playlists.GetItems(playlist.Id).GetAwaiter().GetResult();
