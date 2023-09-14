@@ -11,34 +11,52 @@ public static class FavoritesCommand
 
     #region Public Methods
 
-    public static int Execute(FavoritesOptions options, ISpotifyService spotifyService)
+    public static async Task<int> Execute(FavoritesOptions options, ISpotifyService spotifyService)
     {
         spotifyService.EnsureUserLoggedIn(out var spotify);
-        var me = spotify.UserProfile.Current().GetAwaiter().GetResult();
-        var tracksPage = spotify.Library.GetTracks().GetAwaiter().GetResult();
-        var savedTracks = spotify.PaginateAll(tracksPage).GetAwaiter().GetResult().ToArray();
+        var me = await spotify.UserProfile.Current();
+        var tracksPage = await spotify.Library.GetTracks();
+        var savedTracks = await spotify.PaginateAll(tracksPage);
         if (!savedTracks.Any())
         {
             Console.WriteLine("No saved tracks found");
             return 0;
         }
 
+        if (options.RemoveFromPlaylists)
+        {
+            return await RemoveFavoriteTracksFromPlaylists(spotify, savedTracks.ToArray(), me.Id);
+        }
+
+        if (options.Delete)
+        {
+            IList<string> ids = savedTracks.Select(t => t.Track.Id).ToList();
+            bool removed = spotify.Library.RemoveTracks(new LibraryRemoveTracksRequest(ids)).GetAwaiter().GetResult();
+            if (!removed)
+            {
+                Console.WriteLine("Could not remove saved tracks");
+                return 1;
+            }
+
+            Console.WriteLine("The following tracks has been removed from Favorites:");
+        }
+
         foreach (SavedTrack savedTrack in savedTracks)
         {
             Console.WriteLine(GetTracksInfo(new[] { savedTrack.Track }));
         }
-        
-        return options.RemoveFromPlaylists ? RemoveFavoriteTracksFromPlaylists(spotify, savedTracks, me.Id) : 0;
+
+        return 0;
     }
 
     #endregion
-    
+
     #region Helper Methods
 
-    private static int RemoveFavoriteTracksFromPlaylists(ISpotifyClient spotify, SavedTrack[] savedTracks, string myId)
+    private static async Task<int> RemoveFavoriteTracksFromPlaylists(ISpotifyClient spotify, SavedTrack[] savedTracks, string myId)
     {
-        var playlistsPage = spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 }).GetAwaiter().GetResult();
-        var playlists = spotify.PaginateAll(playlistsPage).GetAwaiter().GetResult().ToArray();
+        var playlistsPage = await spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 });
+        var playlists = await spotify.PaginateAll(playlistsPage);
         var myPlaylists = playlists.Where(p => p.Owner.Id == myId).ToArray();
         foreach (var playlist in myPlaylists)
         {
@@ -52,15 +70,15 @@ public static class FavoritesCommand
 
             Console.WriteLine($"Deleting tracks {GetTracksInfo(tracks)} from the playlist {playlist.Name}");
             PlaylistRemoveItemsRequest.Item[] trackUris = tracks.Select(t => new PlaylistRemoveItemsRequest.Item { Uri = t.Uri }).ToArray();
-            spotify.Playlists.RemoveItems(playlist.Id, new PlaylistRemoveItemsRequest
+            await spotify.Playlists.RemoveItems(playlist.Id, new PlaylistRemoveItemsRequest
             {
                 Tracks = trackUris
-            }).GetAwaiter().GetResult();
+            });
         }
 
         return 0;
     }
-    
+
     private static string GetTracksInfo(IEnumerable<FullTrack> tracks)
     {
         StringBuilder sb = new StringBuilder();

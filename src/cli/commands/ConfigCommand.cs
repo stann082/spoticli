@@ -8,7 +8,7 @@ public static class ConfigCommand
 
     #region Public Methods
 
-    public static int Execute(ConfigOptions options, ApplicationConfig config)
+    public static async Task<int> Execute(ConfigOptions options, ApplicationConfig config)
     {
         if (options.Clear)
         {

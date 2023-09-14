@@ -8,7 +8,7 @@ public static class LogoutCommand
 
     #region Public Methods
 
-    public static int Execute(ApplicationConfig config)
+    public static Task<int> Execute(ApplicationConfig config)
     {
         config.SpotifyToken.AccessToken = null;
         config.SpotifyToken.RefreshToken = null;
@@ -17,8 +17,7 @@ public static class LogoutCommand
         config.SpotifyToken.TokenType = null;
         config.Save();
         ConsoleWrapper.WriteLine("Account has been logged out!", ConsoleColor.Green);
-
-        return 0;
+        return Task.FromResult(0);
     }
 
     #endregion

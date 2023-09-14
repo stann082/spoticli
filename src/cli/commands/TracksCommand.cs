@@ -12,7 +12,7 @@ public static class TracksCommand
 
     #region Public Methods
 
-    public static int Execute(TracksOptions options, ISpotifyService spotifyService)
+    public static async Task<int> Execute(TracksOptions options, ISpotifyService spotifyService)
     {
         if (options.Recent > Constants.MaxRecentlyPlayed)
         {

@@ -30,22 +30,22 @@ public class App
 
     #region Public Methods
 
-    public int RunApp(IEnumerable<string> args)
+    public async Task<int> RunApp(IEnumerable<string> args)
     {
-        return Parser.Default.ParseArguments<ConfigOptions,
+        return await Parser.Default.ParseArguments<ConfigOptions,
                 FavoritesOptions,
                 LoginOptions,
                 LogoutOptions,
                 PlaylistsOptions,
                 TracksOptions>(args)
             .MapResult(
-                (ConfigOptions opts) => ConfigCommand.Execute(opts, _config),
-                (FavoritesOptions opts) => FavoritesCommand.Execute(opts, _spotifyService),
-                (LoginOptions opts) => LoginCommand.Execute(opts, _config, _loginService),
-                (LogoutOptions _) => LogoutCommand.Execute(_config),
-                (PlaylistsOptions opts) => PlaylistsCommand.Execute(opts, _spotifyService),
-                (TracksOptions opts) => TracksCommand.Execute(opts, _spotifyService),
-                errs => 1);
+                async (ConfigOptions opts) => await ConfigCommand.Execute(opts, _config),
+                async (FavoritesOptions opts) => await FavoritesCommand.Execute(opts, _spotifyService),
+                async (LoginOptions opts) => await LoginCommand.Execute(opts, _config, _loginService),
+                async (LogoutOptions _) => await LogoutCommand.Execute(_config),
+                async (PlaylistsOptions opts) => await PlaylistsCommand.Execute(opts, _spotifyService),
+                async (TracksOptions opts) => await TracksCommand.Execute(opts, _spotifyService),
+                errs => Task.FromResult(1));
     }
 
     #endregion

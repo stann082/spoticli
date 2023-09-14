@@ -6,12 +6,12 @@ using SpotifyAPI.Web.Auth;
 
 namespace cli.commands;
 
-public class LoginCommand
+public static class LoginCommand
 {
 
     #region Public Methods
 
-    public static int Execute(LoginOptions options, ApplicationConfig config, ILoginService loginService)
+    public static async Task<int> Execute(LoginOptions options, ApplicationConfig config, ILoginService loginService)
     {
         if (options.ListScopes)
         {

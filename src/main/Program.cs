@@ -9,7 +9,7 @@ public static class Program
 
     #region Main Method
 
-    public static int Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         var config = ApplicationConfig.Load();
         var services = new ServiceCollection()
@@ -19,7 +19,7 @@ public static class Program
             .AddSingleton<ILoginService, LoginService>()
             .BuildServiceProvider();
 
-        return services.GetService<App>().RunApp(args);
+        return await services.GetService<App>().RunApp(args);
     }
 
     #endregion
