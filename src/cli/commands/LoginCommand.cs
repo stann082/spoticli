@@ -33,7 +33,7 @@ public static class LoginCommand
         Console.WriteLine("If no browser opened, visit the following URL manually:\n");
         ConsoleWrapper.WriteLine($"{uri}\n", ConsoleColor.Cyan);
 
-        var loginError = loginService.WaitForLogin(address, options.Port, TimeSpan.FromSeconds(options.Timeout), state).GetAwaiter().GetResult();
+        var loginError = await loginService.WaitForLogin(address, options.Port, TimeSpan.FromSeconds(options.Timeout), state);
         if (loginError == null)
         {
             ConsoleWrapper.WriteLine($"You're now logged in as {config.Account.DisplayName} ({config.Account.Id})", ConsoleColor.Green);

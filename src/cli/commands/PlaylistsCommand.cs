@@ -12,8 +12,8 @@ public static class PlaylistsCommand
     public static async Task<int> Execute(PlaylistsOptions options, ISpotifyService spotifyService)
     {
         spotifyService.EnsureUserLoggedIn(out var spotify);
-        var page = spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 }).GetAwaiter().GetResult();
-        var playlists = spotify.PaginateAll(page).GetAwaiter().GetResult().ToArray();
+        var page = await spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 });
+        var playlists = await spotify.PaginateAll(page);
         if (!string.IsNullOrEmpty(options.Query))
         {
             playlists = playlists.Where(p => p.Name.Contains(options.Query)).ToArray();
@@ -23,12 +23,11 @@ public static class PlaylistsCommand
         {
             foreach (var playlist in playlists)
             {
-                var pPage = spotify.Playlists.GetItems(playlist.Id).GetAwaiter().GetResult();
-                var playlistTracks = spotify.PaginateAll(pPage).GetAwaiter().GetResult().Select(p => p.Track);
+                var pPage = await spotify.Playlists.GetItems(playlist.Id);
+                var playlistTracks = (await spotify.PaginateAll(pPage)).Select(p => p.Track);
                 foreach (IPlayableItem playlistTrack in playlistTracks)
                 {
-                    FullTrack fullTrack = playlistTrack as FullTrack;
-                    if (fullTrack == null)
+                    if (playlistTrack is not FullTrack fullTrack)
                     {
                         continue;
                     }

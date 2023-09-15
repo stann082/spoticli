@@ -3,7 +3,7 @@
 namespace cli.options;
 
 [Verb("favorites", HelpText = "Gets information and manage spotify favorites list.")]
-public class FavoritesOptions
+public class FavoritesOptions : AbstractOption
 {
     [Option('d', "delete", HelpText = "Deletes all items from favorites.")]
     public bool Delete { get; set; }
