@@ -21,12 +21,12 @@ public static class TracksCommand
         }
 
         spotifyService.EnsureUserLoggedIn(out var spotify);
-        var paging = spotify.Player.GetRecentlyPlayed(new PlayerRecentlyPlayedRequest
+        var paging = await spotify.Player.GetRecentlyPlayed(new PlayerRecentlyPlayedRequest
         {
             Limit = options.Recent
-        }).GetAwaiter().GetResult();
+        });
 
-        PlayHistoryItem[] items = paging?.Items != null
+        PlayHistoryItem[] items = paging.Items != null
             ? paging.Items.ToArray()
             : Array.Empty<PlayHistoryItem>();
 

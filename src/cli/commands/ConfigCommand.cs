@@ -8,13 +8,13 @@ public static class ConfigCommand
 
     #region Public Methods
 
-    public static async Task<int> Execute(ConfigOptions options, ApplicationConfig config)
+    public static Task<int> Execute(ConfigOptions options, ApplicationConfig config)
     {
         if (options.Clear)
         {
             Console.WriteLine("The config file has been deleted");
             ApplicationConfig.Delete();
-            return 0;
+            return Task.FromResult(0);
         }
 
         if (options.UseEnvVars)
@@ -24,13 +24,13 @@ public static class ConfigCommand
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
             {
                 Console.WriteLine("Please ensure that both env vars SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET are set");
-                return 1;
+                return Task.FromResult(1);
             }
 
             options.ClientId = clientId;
             options.ClientSecret = clientSecret;
         }
-        
+
         if (!string.IsNullOrEmpty(options.ClientId))
         {
             config.SpotifyApp.ClientId = options.ClientId;
@@ -42,7 +42,7 @@ public static class ConfigCommand
         }
 
         config.Save();
-        return 0;
+        return Task.FromResult(0);
     }
 
     #endregion
