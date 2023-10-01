@@ -14,7 +14,7 @@ public class ApplicationConfig
 
     #region Utility
 
-    public static string AppConfigPath = Path.Combine(
+    public static string AppConfigRootPath = Path.Combine(
         Environment.GetFolderPath(
             Environment.SpecialFolder.ApplicationData,
             Environment.SpecialFolderOption.Create
@@ -23,7 +23,7 @@ public class ApplicationConfig
     );
 
     public static string AppConfigFilePath = Path.Combine(
-        AppConfigPath,
+        AppConfigRootPath,
         "config.json"
     );
 
@@ -56,7 +56,7 @@ public class ApplicationConfig
 
     public static ApplicationConfig Load()
     {
-        Directory.CreateDirectory(AppConfigPath);
+        Directory.CreateDirectory(AppConfigRootPath);
         if (!File.Exists(AppConfigFilePath))
         {
             var config = new ApplicationConfig();
