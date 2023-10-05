@@ -1,8 +1,6 @@
 ﻿using System.Text;
 using cli.commands.sandbox;
 using cli.options;
-using core;
-using core.config;
 using core.services;
 using SpotifyAPI.Web;
 
@@ -17,11 +15,6 @@ public static class PlaylistsCommand
     {
         spotifyService.EnsureUserLoggedIn(out var spotify);
 
-        if (!string.IsNullOrEmpty(options.NewPlaylist))
-        {
-            // return await new SandboxHelper().DoStuff(spotify);
-        }
-
         var page = await spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 });
         var playlists = await spotify.PaginateAll(page);
         if (!string.IsNullOrEmpty(options.Query))
@@ -31,7 +24,9 @@ public static class PlaylistsCommand
 
         if (options.Tracks)
         {
-            List<string> trackItems = new List<string>();
+            StringBuilder tracksInfo = new StringBuilder();
+
+            List<FullTrack> fullTracks = new List<FullTrack>();
             foreach (var playlist in playlists)
             {
                 var pPage = await spotify.Playlists.GetItems(playlist.Id);
@@ -43,43 +38,23 @@ public static class PlaylistsCommand
                         continue;
                     }
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append($"[{fullTrack.Name}],[{string.Join(", ", fullTrack.Artists.Select(a => a.Name))}]");
-
+                    tracksInfo.Append($"[{fullTrack.Name}],[{string.Join(", ", fullTrack.Artists.Select(a => a.Name))}]");
                     if (options.ShowTrackId)
                     {
-                        sb.Append($",[{fullTrack.Id}]");
+                        tracksInfo.Append($",[{fullTrack.Id}]");
                     }
 
-                    trackItems.Add(sb.ToString());
+                    tracksInfo.AppendLine();
+                    fullTracks.Add(fullTrack);
                 }
             }
 
-            if (options.Export)
+            if (!string.IsNullOrEmpty(options.NewPlaylist))
             {
-                const int chunkSize = 20;
-                var chunks = trackItems.Batch(chunkSize);
-                int fileCount = 0;
-                foreach (var chunk in chunks)
-                {
-                    fileCount++;
-
-                    string exportRootPath = Path.Combine(ApplicationConfig.AppConfigRootPath, "exports");
-                    if (!Directory.Exists(exportRootPath))
-                    {
-                        Directory.CreateDirectory(exportRootPath);
-                    }
-
-                    string query = !string.IsNullOrEmpty(options.Query) ? options.Query : "playlist";
-                    string filePrefix = query.Replace(' ', '_').ToLower();
-                    string filename = Path.Combine(exportRootPath, $"{filePrefix}_{fileCount}.txt");
-                    await File.WriteAllLinesAsync(filename, chunk);
-                }
-
-                return 0;
+                return await new SandboxHelper().DoStuff(spotify, fullTracks.ToArray());
             }
 
-            Console.WriteLine(string.Join("\r\n", trackItems));
+            Console.WriteLine(string.Join("\r\n", tracksInfo));
             return 0;
         }
 
