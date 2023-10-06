@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using cli.commands.sandbox;
 using cli.options;
+using core;
 using core.services;
 using SpotifyAPI.Web;
 
@@ -20,6 +21,27 @@ public static class PlaylistsCommand
         if (!string.IsNullOrEmpty(options.Query))
         {
             playlists = playlists.Where(p => p.Name.Contains(options.Query, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        if (options.ShouldFindDuplicates)
+        {
+            var me = await spotify.UserProfile.Current();
+            var myPlaylists = playlists.Where(p => p.Owner.Id == me.Id).ToArray();
+            var duplicates = await DuplicateFinder.Find(spotify, myPlaylists.ToArray(), options.BatchSize);
+            if (!duplicates.Any())
+            {
+                Console.WriteLine("No duplicate tracks found in any playlists");
+                return 0;
+            }
+
+            Console.WriteLine("\nThe following duplicate tracks are found:\n");
+            foreach (KeyValuePair<SimplePlaylist, FullTrack[]> pair in duplicates)
+            {
+                Console.WriteLine($"Playlist: {pair.Key.Name}");
+                Console.WriteLine($"Tracks: {GetTrackSummary(pair.Value)}");
+            }
+
+            return 0;
         }
 
         if (options.Tracks)
@@ -75,5 +97,26 @@ public static class PlaylistsCommand
     }
 
     #endregion
+
+    private static string GetTrackSummary(IEnumerable<FullTrack> tracks)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        bool isFirst = true;
+        foreach (var track in tracks)
+        {
+            if (isFirst)
+            {
+                sb.AppendLine($"\"{track.Name} ({string.Join(',', track.Artists.Select(a => a.Name))})\"");
+                isFirst = false;
+            }
+            else
+            {
+                sb.AppendLine($"        \"{track.Name} ({string.Join(',', track.Artists.Select(a => a.Name))})\"");
+            }
+        }
+
+        return sb.ToString();
+    }
 
 }

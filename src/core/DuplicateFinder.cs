@@ -2,14 +2,14 @@
 
 namespace core;
 
-public class DuplicateFinder
+public static class DuplicateFinder
 {
 
     #region Public Methods
 
-    public async Task Find(ISpotifyClient spotify, IEnumerable<SimplePlaylist> playlists, int batchSize)
+    public static async Task<Dictionary<SimplePlaylist, FullTrack[]>> Find(ISpotifyClient spotify, IEnumerable<SimplePlaylist> playlists, int batchSize)
     {
-        Dictionary<string, FullTrack[]> duplicateMap = new Dictionary<string, FullTrack[]>();
+        Dictionary<SimplePlaylist, FullTrack[]> duplicateMap = new Dictionary<SimplePlaylist, FullTrack[]>();
 
         IEnumerable<IEnumerable<SimplePlaylist>> batches = playlists.Batch(batchSize);
         var tasks = batches.Select(async batch =>
@@ -22,23 +22,38 @@ public class DuplicateFinder
                 {
                     continue;
                 }
-
-                var ids = playlistTracks.Select(t => t.Id).ToArray();
+        
+                var ids = playlistTracks.Where(t => t != null).Select(t => t.Id).ToArray();
                 var duplicateTracks = ids
-                    // .SelectMany(u => u)
                     .GroupBy(u => u)
                     .Where(g => g.Count() > 1)
                     .Select(g => g.Key)
                     .ToList();
-
+        
                 if (!duplicateTracks.Any()) continue;
                 FullTrack[] value = playlistTracks.Where(t => duplicateTracks.Contains(t.Id)).ToArray();
-                duplicateMap[playlist.Id] = value;
+                duplicateMap[playlist] = value.Distinct(new TrackIdComparer()).ToArray();
             }
         });
         await Task.WhenAll(tasks);
+        return duplicateMap;
+    }
 
-        string placeholder = string.Empty;
+    #endregion
+
+    #region Helper Classes
+
+    private class TrackIdComparer : IEqualityComparer<FullTrack>
+    {
+        public bool Equals(FullTrack x, FullTrack y)
+        {
+            return x?.Id == y?.Id;
+        }
+
+        public int GetHashCode(FullTrack obj)
+        {
+            return obj.Id.GetHashCode();
+        }
     }
 
     #endregion
