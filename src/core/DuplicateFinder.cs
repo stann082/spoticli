@@ -7,7 +7,7 @@ public static class DuplicateFinder
 
     #region Public Methods
 
-    public static async Task Find(ISpotifyClient spotify, IEnumerable<SimplePlaylist> playlists, IPlaylistsOptions options)
+    public static async Task Find(ISpotifyClient spotify, IEnumerable<SimplePlaylist> playlists, IOptions options)
     {
         Dictionary<string, IList<string>> duplicateMap = new Dictionary<string, IList<string>>();
         List<FullTrack> allPlaylistsTracks = new List<FullTrack>();

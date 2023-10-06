@@ -1,6 +1,6 @@
 ﻿namespace core;
 
-public interface IPlaylistsOptions
+public interface IOptions
 {
     
     public int BatchSize { get; }

@@ -66,7 +66,7 @@ public static class FavoritesCommand
         var playlists = await spotify.PaginateAll(playlistsPage);
         var myPlaylists = playlists.Where(p => p.Owner.Id == myId).ToArray();
 
-        List<FavoriteTrackInfo> tracks = new List<FavoriteTrackInfo>();
+        List<FavoriteTrackSummary> tracks = new List<FavoriteTrackSummary>();
 
         IEnumerable<IEnumerable<SimplePlaylist>> batches = myPlaylists.Batch(options.BatchSize);
         var tasks = batches.Select(async batch =>
@@ -81,7 +81,7 @@ public static class FavoritesCommand
                     continue;
                 }
 
-                tracks.Add(new FavoriteTrackInfo(tracksInPlaylists, playlist));
+                tracks.Add(new FavoriteTrackSummary(tracksInPlaylists, playlist));
             }
         });
 
@@ -119,9 +119,9 @@ public static class FavoritesCommand
 
     #region Helper Classes
 
-    private class FavoriteTrackInfo
+    private sealed class FavoriteTrackSummary
     {
-        public FavoriteTrackInfo(FullTrack[] tracks, SimplePlaylist playlist)
+        public FavoriteTrackSummary(FullTrack[] tracks, SimplePlaylist playlist)
         {
             Tracks = tracks;
             TracksUris = tracks.Select(t => new PlaylistRemoveItemsRequest.Item { Uri = t.Uri }).ToArray();

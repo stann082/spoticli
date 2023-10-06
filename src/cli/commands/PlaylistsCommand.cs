@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using cli.commands.sandbox;
 using cli.options;
 using core;
 using core.services;
@@ -12,30 +11,29 @@ public static class PlaylistsCommand
 
     #region Public Methods
 
-    public static async Task<int> Execute(PlaylistsOptions options, ISpotifyService spotifyService)
+    public static async Task<int> Execute(PlaylistsOptions playlistsOptions, ISpotifyService spotifyService)
     {
         spotifyService.EnsureUserLoggedIn(out var spotify);
 
         var page = await spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 });
         var playlists = await spotify.PaginateAll(page);
-        if (!string.IsNullOrEmpty(options.Query))
+        if (!string.IsNullOrEmpty(playlistsOptions.Query))
         {
-            playlists = playlists.Where(p => p.Name.Contains(options.Query, StringComparison.OrdinalIgnoreCase)).ToArray();
+            playlists = playlists.Where(p => p.Name.Contains(playlistsOptions.Query, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
 
-        if (options.ShouldFindDuplicates)
+        if (playlistsOptions.ShouldFindDuplicates)
         {
             var me = await spotify.UserProfile.Current();
             var myPlaylists = playlists.Where(p => p.Owner.Id == me.Id).ToArray();
-            await DuplicateFinder.Find(spotify, myPlaylists.ToArray(), options);
+            await DuplicateFinder.Find(spotify, myPlaylists.ToArray(), playlistsOptions);
             return 0;
         }
 
-        if (options.Tracks)
+        if (playlistsOptions.Tracks)
         {
             StringBuilder tracksInfo = new StringBuilder();
 
-            List<FullTrack> fullTracks = new List<FullTrack>();
             foreach (var playlist in playlists)
             {
                 var pPage = await spotify.Playlists.GetItems(playlist.Id);
@@ -48,19 +46,13 @@ public static class PlaylistsCommand
                     }
 
                     tracksInfo.Append($"[{fullTrack.Name}],[{string.Join(", ", fullTrack.Artists.Select(a => a.Name))}]");
-                    if (options.ShowTrackId)
+                    if (playlistsOptions.ShowTrackId)
                     {
                         tracksInfo.Append($",[{fullTrack.Id}]");
                     }
 
                     tracksInfo.AppendLine();
-                    fullTracks.Add(fullTrack);
                 }
-            }
-
-            if (!string.IsNullOrEmpty(options.NewPlaylist))
-            {
-                return await new SandboxHelper().DoStuff(spotify, fullTracks.ToArray());
             }
 
             Console.WriteLine(string.Join("\r\n", tracksInfo));
@@ -72,7 +64,7 @@ public static class PlaylistsCommand
             StringBuilder sb = new StringBuilder();
             sb.Append(playlist.Name);
 
-            if (options.ShowPlaylistId)
+            if (playlistsOptions.ShowPlaylistId)
             {
                 sb.Append($",{playlist.Id}");
             }
@@ -84,26 +76,5 @@ public static class PlaylistsCommand
     }
 
     #endregion
-
-    private static string GetTrackSummary(IEnumerable<FullTrack> tracks)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        bool isFirst = true;
-        foreach (var track in tracks)
-        {
-            if (isFirst)
-            {
-                sb.AppendLine($"\"{track.Name} ({string.Join(',', track.Artists.Select(a => a.Name))})\"");
-                isFirst = false;
-            }
-            else
-            {
-                sb.AppendLine($"        \"{track.Name} ({string.Join(',', track.Artists.Select(a => a.Name))})\"");
-            }
-        }
-
-        return sb.ToString();
-    }
 
 }
