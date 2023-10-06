@@ -27,20 +27,7 @@ public static class PlaylistsCommand
         {
             var me = await spotify.UserProfile.Current();
             var myPlaylists = playlists.Where(p => p.Owner.Id == me.Id).ToArray();
-            var duplicates = await DuplicateFinder.Find(spotify, myPlaylists.ToArray(), options.BatchSize);
-            if (!duplicates.Any())
-            {
-                Console.WriteLine("No duplicate tracks found in any playlists");
-                return 0;
-            }
-
-            Console.WriteLine("\nThe following duplicate tracks are found:\n");
-            foreach (KeyValuePair<SimplePlaylist, FullTrack[]> pair in duplicates)
-            {
-                Console.WriteLine($"Playlist: {pair.Key.Name}");
-                Console.WriteLine($"Tracks: {GetTrackSummary(pair.Value)}");
-            }
-
+            await DuplicateFinder.Find(spotify, myPlaylists.ToArray(), options);
             return 0;
         }
 

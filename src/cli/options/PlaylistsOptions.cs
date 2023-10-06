@@ -1,9 +1,10 @@
 ﻿using CommandLine;
+using core;
 
 namespace cli.options;
 
 [Verb("playlists", HelpText = "Gets information and manage spotify playlists.")]
-public class PlaylistsOptions : AbstractOption
+public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
 {
     
     [Option('c', "create", HelpText = "Create new playlist.")]
