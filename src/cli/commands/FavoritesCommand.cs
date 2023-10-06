@@ -50,7 +50,7 @@ public static class FavoritesCommand
 
         foreach (SavedTrack savedTrack in savedTracks)
         {
-            Console.WriteLine(GetTracksInfo(new[] { savedTrack.Track }));
+            Console.WriteLine(GetTrackSummary(new[] { savedTrack.Track }));
         }
 
         return 0;
@@ -65,40 +65,45 @@ public static class FavoritesCommand
         var playlistsPage = await spotify.Playlists.CurrentUsers(new PlaylistCurrentUsersRequest { Limit = 50 });
         var playlists = await spotify.PaginateAll(playlistsPage);
         var myPlaylists = playlists.Where(p => p.Owner.Id == myId).ToArray();
+
+        List<FavoriteTrackInfo> tracks = new List<FavoriteTrackInfo>();
+
         IEnumerable<IEnumerable<SimplePlaylist>> batches = myPlaylists.Batch(options.BatchSize);
         var tasks = batches.Select(async batch =>
         {
             foreach (var playlist in batch)
             {
                 var page = await spotify.Playlists.GetItems(playlist.Id);
-                var playlistTracks = await spotify.PaginateAll(page);
-                var tracks = playlistTracks.FindTracks(savedTracks);
-                if (!tracks.Any())
+                var allPlaylistTracks = await spotify.PaginateAll(page);
+                var tracksInPlaylists = allPlaylistTracks.FindTracks(savedTracks);
+                if (!tracksInPlaylists.Any())
                 {
                     continue;
                 }
 
-                if (options.IsDryRun)
-                {
-                    Console.WriteLine($"The tracks {GetTracksInfo(tracks)} will be deleted from the playlist {playlist.Name}");
-                }
-                else
-                {
-                    Console.WriteLine($"Deleting tracks {GetTracksInfo(tracks)} from the playlist {playlist.Name}");
-                    PlaylistRemoveItemsRequest.Item[] trackUris = tracks.Select(t => new PlaylistRemoveItemsRequest.Item { Uri = t.Uri }).ToArray();
-                    await spotify.Playlists.RemoveItems(playlist.Id, new PlaylistRemoveItemsRequest
-                    {
-                        Tracks = trackUris
-                    });
-                }
+                tracks.Add(new FavoriteTrackInfo(tracksInPlaylists, playlist));
             }
         });
 
         await Task.WhenAll(tasks);
+        foreach (var trackInfo in tracks)
+        {
+            string trackSummary = GetTrackSummary(trackInfo.Tracks);
+            if (options.IsDryRun)
+            {
+                Console.WriteLine($"The tracks {trackSummary} will be deleted from the playlist {trackInfo.PlaylistName}");
+            }
+            else
+            {
+                Console.WriteLine($"Deleting tracks {trackSummary} from the playlist {trackInfo.PlaylistName}");
+                await spotify.Playlists.RemoveItems(trackInfo.PlaylistId, new PlaylistRemoveItemsRequest { Tracks = trackInfo.TracksUris });
+            }
+        }
+
         return 0;
     }
 
-    private static string GetTracksInfo(IEnumerable<FullTrack> tracks)
+    private static string GetTrackSummary(IEnumerable<FullTrack> tracks)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -108,6 +113,27 @@ public static class FavoritesCommand
         }
 
         return sb.ToString().TrimEnd().TrimEnd(',');
+    }
+
+    #endregion
+
+    #region Helper Classes
+
+    private class FavoriteTrackInfo
+    {
+        public FavoriteTrackInfo(FullTrack[] tracks, SimplePlaylist playlist)
+        {
+            Tracks = tracks;
+            TracksUris = tracks.Select(t => new PlaylistRemoveItemsRequest.Item { Uri = t.Uri }).ToArray();
+            PlaylistId = playlist.Id;
+            PlaylistName = playlist.Name;
+        }
+
+        public FullTrack[] Tracks { get; }
+        public PlaylistRemoveItemsRequest.Item[] TracksUris { get; }
+        public string PlaylistId { get; }
+        public string PlaylistName { get; }
+
     }
 
     #endregion

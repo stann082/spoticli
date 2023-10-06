@@ -1,16 +1,17 @@
 ﻿using CommandLine;
+using core;
 
 namespace cli.options;
 
 [Verb("playlists", HelpText = "Gets information and manage spotify playlists.")]
-public class PlaylistsOptions
+public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
 {
     
     [Option('c', "create", HelpText = "Create new playlist.")]
     public string NewPlaylist { get; set; }
     
-    [Option('e',"export", HelpText = "Exports tracks to a file.")]
-    public bool Export { get; set; }
+    [Option("find-duplicates", HelpText = "Searches for duplicate items in playlists.")]
+    public bool ShouldFindDuplicates { get; set; }
     
     [Option('q', "query", HelpText = "Search for a specific playlist.")]
     public string Query { get; set; }

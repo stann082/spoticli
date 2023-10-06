@@ -9,4 +9,7 @@ public abstract class AbstractOption
 
     [Option("dry-run", HelpText = "Shows an action that would be taken by a specific command.")]
     public bool IsDryRun { get; set; }
+    
+    [Option("run-synchronously", HelpText = "Run async processes synchronously.")]
+    public bool RunSynchronously { get; set; }
 }
