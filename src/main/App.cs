@@ -37,6 +37,7 @@ public class App
                 LoginOptions,
                 LogoutOptions,
                 PlaylistsOptions,
+                RestoreOptions,
                 TracksOptions>(args)
             .MapResult(
                 async (ConfigOptions opts) => await ConfigCommand.Execute(opts, _config),
@@ -44,6 +45,7 @@ public class App
                 async (LoginOptions opts) => await LoginCommand.Execute(opts, _config, _loginService),
                 async (LogoutOptions _) => await LogoutCommand.Execute(_config),
                 async (PlaylistsOptions opts) => await PlaylistsCommand.Execute(opts, _spotifyService),
+                async (RestoreOptions opts) => await RestoreCommand.Execute(opts, _spotifyService),
                 async (TracksOptions opts) => await TracksCommand.Execute(opts, _spotifyService),
                 errs => Task.FromResult(1));
     }

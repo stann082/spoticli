@@ -1,7 +1,8 @@
-﻿using System.Text;
-using cli.options;
+﻿using cli.options;
 using core;
+using core.config;
 using core.services;
+using Newtonsoft.Json;
 using SpotifyAPI.Web;
 
 namespace cli.commands;
@@ -50,7 +51,7 @@ public static class FavoritesCommand
 
         foreach (SavedTrack savedTrack in savedTracks)
         {
-            Console.WriteLine(GetTrackSummary(new[] { savedTrack.Track }));
+            Console.WriteLine(new[] { savedTrack.Track }.Select(t => new PlaylistTrack(t)).GetTrackSummary());
         }
 
         return 0;
@@ -59,6 +60,25 @@ public static class FavoritesCommand
     #endregion
 
     #region Helper Methods
+
+    private static async Task LogDeletedTracks(IEnumerable<FavoriteTrackSummary> tracks, bool isDryRun)
+    {
+        if (isDryRun)
+        {
+            return;
+        }
+
+        long unixTimestamp = DateTime.UtcNow.ToEpochTime();
+        string folderName = Path.Combine(ApplicationConfig.AppConfigRootPath, "deleted", $"{unixTimestamp}");
+        if (!Directory.Exists(folderName))
+        {
+            Directory.CreateDirectory(folderName);
+        }
+
+        string json = JsonConvert.SerializeObject(tracks);
+        await using StreamWriter outputFile = new StreamWriter(Path.Combine(folderName, Constants.FavoritesFileName));
+        await outputFile.WriteAsync(json);
+    }
 
     private static async Task<int> RemoveFavoriteTracksFromPlaylists(ISpotifyClient spotify, SavedTrack[] savedTracks, string myId, AbstractOption options)
     {
@@ -88,7 +108,7 @@ public static class FavoritesCommand
         await Task.WhenAll(tasks);
         foreach (var trackInfo in tracks)
         {
-            string trackSummary = GetTrackSummary(trackInfo.Tracks);
+            string trackSummary = trackInfo.Tracks.GetTrackSummary();
             if (options.IsDryRun)
             {
                 Console.WriteLine($"The tracks {trackSummary} will be deleted from the playlist {trackInfo.PlaylistName}");
@@ -100,40 +120,8 @@ public static class FavoritesCommand
             }
         }
 
+        await LogDeletedTracks(tracks.ToArray(), options.IsDryRun);
         return 0;
-    }
-
-    private static string GetTrackSummary(IEnumerable<FullTrack> tracks)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        foreach (var track in tracks)
-        {
-            sb.Append($"\"{track.Name} ({string.Join(',', track.Artists.Select(a => a.Name))})\", ");
-        }
-
-        return sb.ToString().TrimEnd().TrimEnd(',');
-    }
-
-    #endregion
-
-    #region Helper Classes
-
-    private sealed class FavoriteTrackSummary
-    {
-        public FavoriteTrackSummary(FullTrack[] tracks, SimplePlaylist playlist)
-        {
-            Tracks = tracks;
-            TracksUris = tracks.Select(t => new PlaylistRemoveItemsRequest.Item { Uri = t.Uri }).ToArray();
-            PlaylistId = playlist.Id;
-            PlaylistName = playlist.Name;
-        }
-
-        public FullTrack[] Tracks { get; }
-        public PlaylistRemoveItemsRequest.Item[] TracksUris { get; }
-        public string PlaylistId { get; }
-        public string PlaylistName { get; }
-
     }
 
     #endregion
