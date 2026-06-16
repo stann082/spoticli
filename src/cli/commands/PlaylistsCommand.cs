@@ -51,12 +51,21 @@ public static class PlaylistsCommand
 
             // Batch in chunks of 100 (Spotify API limit)
             var allFeatures = new List<TrackAudioFeatures>();
-            foreach (var batch in tracks.Chunk(100))
+            try
             {
-                var ids = batch.Select(t => t.Id).ToList();
-                var featuresResponse = await spotify.Tracks.GetSeveralAudioFeatures(
-                    new TracksAudioFeaturesRequest(ids));
-                allFeatures.AddRange(featuresResponse.AudioFeatures.Where(f => f != null));
+                foreach (var batch in tracks.Chunk(100))
+                {
+                    var ids = batch.Select(t => t.Id).ToList();
+                    var featuresResponse = await spotify.Tracks.GetSeveralAudioFeatures(
+                        new TracksAudioFeaturesRequest(ids));
+                    allFeatures.AddRange(featuresResponse.AudioFeatures.Where(f => f != null));
+                }
+            }
+            catch (APIException ex)
+            {
+                Console.WriteLine($"Failed to fetch audio features: {ex.Message}");
+                Console.WriteLine("Spotify restricted this endpoint for apps created after November 2024. Your app credentials may not have access.");
+                return 1;
             }
 
             var featureMap = allFeatures.ToDictionary(f => f.Id);
