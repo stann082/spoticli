@@ -24,5 +24,8 @@ public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
     
     [Option("show-track-id", HelpText = "Displays track id.")]
     public bool ShowTrackId { get; set; }
-    
+
+    [Option("dj-mix", HelpText = "Clone playlist reordered for smooth DJ transitions by tempo and key.")]
+    public bool DjMix { get; set; }
+
 }
