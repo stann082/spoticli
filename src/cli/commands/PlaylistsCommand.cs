@@ -23,6 +23,11 @@ public static class PlaylistsCommand
             playlists = playlists.Where(p => p.Name.Contains(options.Query, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
 
+        if (!string.IsNullOrEmpty(options.NewPlaylist))
+        {
+            return await CreatePlaylist(spotify, options);
+        }
+
         if (options.DjMix)
         {
             if (playlists.Count == 0)
@@ -124,11 +129,6 @@ public static class PlaylistsCommand
                 }
             }
 
-            if (!string.IsNullOrEmpty(options.NewPlaylist))
-            {
-                return await new SandboxHelper().DoStuff(spotify, fullTracks.ToArray());
-            }
-
             Console.WriteLine(string.Join("\r\n", tracksInfo));
             return 0;
         }
@@ -150,6 +150,44 @@ public static class PlaylistsCommand
     }
 
     #endregion
+
+    private static async Task<int> CreatePlaylist(SpotifyClient spotify, PlaylistsOptions options)
+    {
+        var me = await spotify.UserProfile.Current();
+        var newPlaylist = await spotify.Playlists.Create(me.Id, new PlaylistCreateRequest(options.NewPlaylist));
+        Console.WriteLine($"Created playlist \"{options.NewPlaylist}\".");
+
+        if (string.IsNullOrEmpty(options.TrackIdsFile))
+        {
+            return 0;
+        }
+
+        if (!File.Exists(options.TrackIdsFile))
+        {
+            Console.WriteLine($"File not found: {options.TrackIdsFile}");
+            return 1;
+        }
+
+        var trackIds = File.ReadAllLines(options.TrackIdsFile)
+            .Select(l => l.Trim())
+            .Where(l => !string.IsNullOrEmpty(l))
+            .ToList();
+
+        if (trackIds.Count == 0)
+        {
+            Console.WriteLine("No track IDs found in file.");
+            return 0;
+        }
+
+        foreach (var chunk in trackIds.Chunk(100))
+        {
+            var uris = chunk.Select(id => $"spotify:track:{id}").ToList();
+            await spotify.Playlists.AddItems(newPlaylist.Id, new PlaylistAddItemsRequest(uris));
+        }
+
+        Console.WriteLine($"Added {trackIds.Count} track(s).");
+        return 0;
+    }
 
     private static string GetTrackSummary(IEnumerable<FullTrack> tracks)
     {
