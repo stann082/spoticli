@@ -23,6 +23,49 @@ public static class PlaylistsCommand
             playlists = playlists.Where(p => p.Name.Contains(options.Query, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
 
+        if (options.DjMix && !string.IsNullOrEmpty(options.TrackIdsFile))
+        {
+            if (string.IsNullOrEmpty(options.PlaylistName))
+            {
+                Console.WriteLine("Specify a playlist name with --name.");
+                return 1;
+            }
+
+            if (!File.Exists(options.TrackIdsFile))
+            {
+                Console.WriteLine($"File not found: {options.TrackIdsFile}");
+                return 1;
+            }
+
+            var trackIds = File.ReadAllLines(options.TrackIdsFile)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .Distinct()
+                .ToList();
+
+            if (trackIds.Count == 0)
+            {
+                Console.WriteLine("No track IDs found in file.");
+                return 1;
+            }
+
+            Console.WriteLine($"Read {trackIds.Count} track IDs from file.");
+
+            var uris = trackIds.Select(id => $"spotify:track:{id}").ToList();
+            var me = await spotify.UserProfile.Current();
+            var mixName = $"{options.PlaylistName} [DJ Mix]";
+            var newPlaylist = await spotify.Playlists.Create(me.Id, new PlaylistCreateRequest(mixName));
+            Console.WriteLine($"Created playlist \"{mixName}\".");
+
+            foreach (var chunk in uris.Chunk(100))
+            {
+                await spotify.Playlists.AddItems(newPlaylist.Id, new PlaylistAddItemsRequest(chunk.ToList()));
+            }
+
+            Console.WriteLine($"Added {uris.Count} tracks. Done.");
+            return 0;
+        }
+
         if (options.DjMix)
         {
             if (playlists.Count == 0)

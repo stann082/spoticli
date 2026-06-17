@@ -28,4 +28,10 @@ public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
     [Option("dj-mix", HelpText = "Clone playlist reordered for smooth DJ transitions by tempo and key.")]
     public bool DjMix { get; set; }
 
+    [Option("track-ids", HelpText = "Path to a file containing one Spotify track ID per line.")]
+    public string TrackIdsFile { get; set; }
+
+    [Option('n', "name", HelpText = "Name for the new playlist (used with --track-ids --dj-mix).")]
+    public string PlaylistName { get; set; }
+
 }
