@@ -7,8 +7,11 @@ namespace cli.options;
 public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
 {
     
-    [Option('c', "create", HelpText = "Create new playlist.")]
+    [Option('c', "create", HelpText = "Create new playlist. Optionally provide a file path with track IDs via --track-ids-file.")]
     public string NewPlaylist { get; set; }
+
+    [Option("track-ids-file", HelpText = "Path to a file containing track IDs (one per line) to add when creating a playlist.")]
+    public string TrackIdsFile { get; set; }
     
     [Option("find-duplicates", HelpText = "Searches for duplicate items in playlists.")]
     public bool ShouldFindDuplicates { get; set; }
