@@ -32,6 +32,7 @@ public class ApplicationConfig
     #region Properties
 
     public AccountConfig Account { get; } = new AccountConfig();
+    public MonitorConfig Monitor { get; } = new MonitorConfig();
     public SpotifyAppConfig SpotifyApp { get; } = new SpotifyAppConfig();
     public SpotifyTokenConfig SpotifyToken { get; } = new SpotifyTokenConfig();
 
