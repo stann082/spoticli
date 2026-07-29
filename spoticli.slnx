@@ -3,6 +3,7 @@
     <Project Path="src/cli/cli.csproj" />
     <Project Path="src/core/core.csproj" />
     <Project Path="src/main/main.csproj" />
+    <Project Path="src/monitor/monitor.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/core.test/core.test.csproj" />

@@ -1,4 +1,5 @@
 using cli.options;
+using core.monitor;
 using core.services;
 using SpotifyAPI.Web;
 
@@ -17,12 +18,7 @@ public static class TopCommand
             return 1;
         }
 
-        var timeRange = options.Range switch
-        {
-            "short" => PersonalizationTopRequest.TimeRange.ShortTerm,
-            "long" => PersonalizationTopRequest.TimeRange.LongTerm,
-            _ => PersonalizationTopRequest.TimeRange.MediumTerm
-        };
+        var timeRange = SpotifyTimeRange.Parse(options.Range);
 
         spotifyService.EnsureUserLoggedIn(out var spotify);
 
