@@ -25,7 +25,7 @@ public static class TopDiffCalculator
                 TimeRange = current.TimeRange,
                 PreviousCapturedAt = null,
                 CurrentCapturedAt = current.CapturedAt,
-                ListSize = current.Entries.Count,
+                Current = current,
                 Changes = []
             };
         }
@@ -94,7 +94,7 @@ public static class TopDiffCalculator
             TimeRange = current.TimeRange,
             PreviousCapturedAt = previous.CapturedAt,
             CurrentCapturedAt = current.CapturedAt,
-            ListSize = current.Entries.Count,
+            Current = current,
             Changes = changes
         };
     }

@@ -12,4 +12,9 @@ public class MonitorConfig
     /// <summary>Days of history to keep. Zero or less keeps everything.</summary>
     public int RetentionDays { get; set; } = 365;
 
+    /// <summary>Show a Windows toast summarising the run. The detail lives in the email.</summary>
+    public bool EnableToast { get; set; } = true;
+
+    public EmailConfig Email { get; } = new EmailConfig();
+
 }

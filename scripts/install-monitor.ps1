@@ -14,6 +14,10 @@
     Snapshots are stored in %APPDATA%\spoticli\history.db and logs in
     %APPDATA%\spoticli\logs.
 
+    Reporting is via a Windows toast (a one-line summary) and, once configured, an email
+    carrying the full ranked detail. See the Email section printed at the end of a successful
+    install for how to turn the email on.
+
     The script is idempotent. If the task already exists, it offers to reinstall (republish +
     replace binaries), run it now, or uninstall it.
 
@@ -124,11 +128,42 @@ function Show-Summary {
     Write-Host ""
     Write-Host "Installed:  $ExePath"          -ForegroundColor Gray
     Write-Host "Schedule:   daily at $Time"     -ForegroundColor Gray
-    Write-Host "History:    $env:APPDATA\spoticli\history.db" -ForegroundColor Gray
-    Write-Host "Logs:       $env:APPDATA\spoticli\logs"       -ForegroundColor Gray
+    Write-Host "Config:     $env:APPDATA\spoticli\config.json"  -ForegroundColor Gray
+    Write-Host "History:    $env:APPDATA\spoticli\history.db"   -ForegroundColor Gray
+    Write-Host "Logs:       $env:APPDATA\spoticli\logs"         -ForegroundColor Gray
     Write-Host ""
     Write-Host "Preview a report without touching the history:" -ForegroundColor Gray
     Write-Host "  & '$ExePath' --dry-run"       -ForegroundColor Gray
+    Write-Host ""
+}
+
+function Show-EmailSetup {
+    Write-Host "--- Email report (optional) ---" -ForegroundColor Cyan
+    Write-Host "The toast only carries a one-line summary. For the full ranked detail, fill in the" -ForegroundColor Gray
+    Write-Host "Monitor.Email section of config.json:" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host '  "Email": {'                                     -ForegroundColor DarkGray
+    Write-Host '    "Enabled": true,'                             -ForegroundColor DarkGray
+    Write-Host '    "Host": "127.0.0.1", "Port": 1025,'           -ForegroundColor DarkGray
+    Write-Host '    "SecurityMode": "StartTls",'                  -ForegroundColor DarkGray
+    Write-Host '    "AcceptSelfSignedCertificate": true,'         -ForegroundColor DarkGray
+    Write-Host '    "From": "you@example.com",'                   -ForegroundColor DarkGray
+    Write-Host '    "To": "you@example.com",'                     -ForegroundColor DarkGray
+    Write-Host '    "UserName": "you@example.com"'                -ForegroundColor DarkGray
+    Write-Host '  }'                                              -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Common setups:" -ForegroundColor Gray
+    Write-Host "  Proton Mail Bridge  127.0.0.1:1025, StartTls, AcceptSelfSignedCertificate true" -ForegroundColor Gray
+    Write-Host "                      (Bridge must be running; use the Bridge-generated password)" -ForegroundColor Gray
+    Write-Host "  Gmail               smtp.gmail.com:587, StartTls, self-signed false" -ForegroundColor Gray
+    Write-Host "                      (needs 2FA and an app password, not your account password)" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "The password is NOT stored in config.json. Set it yourself, in your own shell:" -ForegroundColor Yellow
+    Write-Host '  setx SPOTICLI_SMTP_PASSWORD "your-smtp-password"' -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "setx persists it for your account, which is what lets the scheduled task see it." -ForegroundColor Gray
+    Write-Host "Open a new shell afterwards, then prove the settings work:" -ForegroundColor Gray
+    Write-Host "  & '$ExePath' --test-email"    -ForegroundColor Gray
     Write-Host ""
 }
 
@@ -148,6 +183,7 @@ if ($null -eq $existing) {
     Copy-MonitorFiles
     Register-MonitorTask
     Show-Summary
+    Show-EmailSetup
 
     $answer = Read-Host "Run it once now to record the baseline? [Y/n]"
     if ($answer -notmatch '^[nN]') {

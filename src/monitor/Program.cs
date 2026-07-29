@@ -32,8 +32,27 @@ try
         .AddSingleton<ISpotifyService, SpotifyService>()
         .AddSingleton<ISnapshotStore>(_ => new SqliteSnapshotStore())
         .AddSingleton<ITopMonitorService, TopMonitorService>()
-        .AddSingleton<INotifier, ToastNotifier>()
+        .AddSingleton<ToastNotifier>()
+        .AddSingleton<EmailNotifier>()
         .BuildServiceProvider();
+
+    if (options.TestEmail)
+    {
+        var email = config.Monitor.Email;
+        if (!email.IsUsable())
+        {
+            // A misconfiguration is a normal thing to hit here, so report it rather than
+            // letting it surface as a stack trace.
+            Log.Error("Email is not configured. Set Monitor.Email.Enabled, Host, From and To in {Path} first",
+                ApplicationConfig.AppConfigFilePath);
+            return 1;
+        }
+
+        Log.Information("Sending a test email to {To} via {Host}:{Port}", email.To, email.Host, email.Port);
+        await services.GetRequiredService<EmailNotifier>().SendTestAsync();
+        Log.Information("Test email sent");
+        return 0;
+    }
 
     Log.Information(
         "Monitor run started (ranges: {Ranges}, limit: {Limit}, dry run: {DryRun})",
@@ -59,12 +78,14 @@ try
     }
     else if (!result.HasChanges && !result.IsBaseline && !options.NotifyAlways)
     {
-        // Nothing moved. A daily toast saying so would only train you to ignore them.
-        Log.Information("Notification skipped: nothing changed");
+        // Nothing moved. A daily toast saying so would only train you to ignore them. The email
+        // notifier makes the same call independently, so SendWhenUnchanged can still opt in.
+        Log.Information("Toast skipped: nothing changed");
+        await BuildNotifier(services, config, includeToast: false).NotifyAsync(result);
     }
     else
     {
-        await services.GetRequiredService<INotifier>().NotifyAsync(result);
+        await BuildNotifier(services, config, includeToast: config.Monitor.EnableToast).NotifyAsync(result);
     }
 
     Log.Information("Monitor run completed");
@@ -78,4 +99,28 @@ catch (Exception ex)
 finally
 {
     await Log.CloseAndFlushAsync();
+}
+
+static INotifier BuildNotifier(IServiceProvider services, ApplicationConfig config, bool includeToast)
+{
+    var channels = new List<INotifier>();
+
+    if (includeToast)
+    {
+        channels.Add(services.GetRequiredService<ToastNotifier>());
+    }
+
+    // Always handed the result: the notifier decides for itself whether a quiet run is worth an
+    // email, which is what makes Email.SendWhenUnchanged independent of the toast.
+    if (config.Monitor.Email.Enabled)
+    {
+        channels.Add(services.GetRequiredService<EmailNotifier>());
+    }
+
+    if (channels.Count == 0)
+    {
+        Log.Warning("No notification channel is enabled - the report is in the log only");
+    }
+
+    return new CompositeNotifier(channels);
 }

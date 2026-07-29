@@ -17,8 +17,11 @@ public class TopDiff
 
     public DateTime CurrentCapturedAt { get; init; }
 
+    /// <summary>The snapshot this diff ends at, kept so a report can show the full standings.</summary>
+    public TopSnapshot Current { get; init; }
+
     /// <summary>Number of entries in the current snapshot - the "top N" the report talks about.</summary>
-    public int ListSize { get; init; }
+    public int ListSize => Current?.Entries.Count ?? 0;
 
     /// <summary>
     /// Entries that entered, then left, then moved (largest move first). Entries that held their
