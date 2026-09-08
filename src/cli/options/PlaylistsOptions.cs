@@ -12,6 +12,12 @@ public class PlaylistsOptions : AbstractOption, IPlaylistsOptions
 
     [Option("track-ids-file", HelpText = "Path to a file containing track IDs (one per line) to add when creating a playlist.")]
     public string TrackIdsFile { get; set; }
+
+    [Option("search-file", HelpText = "Path to a file with 'Song,Artist' entries (one per line) to search for and add when creating a playlist. Reports any tracks that could not be found.")]
+    public string SearchFile { get; set; }
+
+    [Option("from-json", HelpText = "Path to a JSON file describing a playlist to create: { name, description, tracks: [{ id } | { title, artist } | { title, artist, status }] }. Tracks with an id are added directly; tracks with a status (e.g. \"blocked\") are skipped and reported separately; all other tracks are searched by title/artist and reported if not found.")]
+    public string FromJson { get; set; }
     
     [Option("find-duplicates", HelpText = "Searches for duplicate items in playlists.")]
     public bool ShouldFindDuplicates { get; set; }
